@@ -68,6 +68,8 @@ static bool Context_free(Context *self)
 	self->anim = NULL;
 	self->baked = NULL;
 	self->cache = NULL;
+	self->elements = NULL;
+	self->num_elements = 0;
 	return true;
 }
 
@@ -91,8 +93,13 @@ static int Context_clear(Context *self)
 
 static void Context_dealloc(Context *self)
 {
+	// Context_clear (the GC tp_clear slot) may have already run and nulled
+	// self->name to break a cycle, so Py_XDECREF rather than Py_DECREF.
+	// Untrack from the cyclic GC before freeing anything it might still visit.
+	PyObject_GC_UnTrack(self);
 	Context_free(self);
-	Py_DECREF(self->name);
+	Py_XDECREF(self->name);
+	self->name = NULL;
 
 	Py_TYPE(self)->tp_free((PyObject*)self);
 }
@@ -278,11 +285,18 @@ static PyObject* Element_from(void *p_elem, Context *ctx)
 
     ufbx_element *elem = (ufbx_element*)p_elem;
     PyObject **p_existing = &ctx->elements[elem->element_id];
-    if (*p_existing) return *p_existing;
+    // Cache owns one strong ref for the lifetime of the Context; every caller
+    // gets its own new ref. Previously the cache held a borrowed ref and
+    // callers also received borrowed refs, which corrupted the refcount the
+    // moment a temporary (e.g. `scene.nodes[i]`) went out of scope: the
+    // cached PyObject was freed while `ctx->elements[i]` still pointed at it,
+    // and `Context_free` later `Py_SETREF`'d a dangling pointer.
+    if (*p_existing) return Py_NewRef(*p_existing);
 
     PyObject *obj = Element_create(elem, ctx);
+    if (!obj) return NULL;
     *p_existing = obj;
-    return obj;
+    return Py_NewRef(obj);
 }
 
 static PyObject* Scene_create(ufbx_scene *scene);

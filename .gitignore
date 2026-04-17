@@ -8,3 +8,4 @@ dist/
 *.pyd
 *.pdb
 .pytest_cache/
+*.so
