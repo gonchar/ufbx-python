@@ -22727,9 +22727,13 @@ ufbxi_noinline static ufbx_transform ufbxi_get_transform(const ufbx_props *props
 	ufbxi_add_translate(&t, scale_offset);
 
 	ufbxi_sub_translate(&t, rot_pivot);
-	ufbxi_mul_inv_rotate(&t, post_rotation, UFBX_ROTATION_ORDER_XYZ);
+	if (order != UFBX_ROTATION_ORDER_SPHERIC) {
+		ufbxi_mul_inv_rotate(&t, post_rotation, UFBX_ROTATION_ORDER_XYZ);
+	}
 	ufbxi_mul_rotate(&t, rotation, order);
-	ufbxi_mul_rotate(&t, pre_rotation, UFBX_ROTATION_ORDER_XYZ);
+	if (order != UFBX_ROTATION_ORDER_SPHERIC) {
+		ufbxi_mul_rotate(&t, pre_rotation, UFBX_ROTATION_ORDER_XYZ);
+	}
 	ufbxi_add_translate(&t, rot_pivot);
 
 	ufbxi_add_translate(&t, rot_offset);
@@ -22765,9 +22769,14 @@ ufbxi_noinline static ufbx_quat ufbxi_get_rotation(const ufbx_props *props, ufbx
 		ufbxi_mul_rotate_quat(&t, node->adjust_post_rotation);
 	}
 
-	ufbxi_mul_inv_rotate(&t, post_rotation, UFBX_ROTATION_ORDER_XYZ);
+	// See ufbxi_get_transform: SPHERIC skips Pre/Post rotations.
+	if (order != UFBX_ROTATION_ORDER_SPHERIC) {
+		ufbxi_mul_inv_rotate(&t, post_rotation, UFBX_ROTATION_ORDER_XYZ);
+	}
 	ufbxi_mul_rotate(&t, rotation, order);
-	ufbxi_mul_rotate(&t, pre_rotation, UFBX_ROTATION_ORDER_XYZ);
+	if (order != UFBX_ROTATION_ORDER_SPHERIC) {
+		ufbxi_mul_rotate(&t, pre_rotation, UFBX_ROTATION_ORDER_XYZ);
+	}
 
 	if (node->has_adjust_transform) {
 		ufbxi_mul_rotate_quat(&t, node->adjust_pre_rotation);
