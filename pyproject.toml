@@ -1,6 +1,6 @@
 [tool.ufbx]
 name = "ufbx"
-version = "0.0.5.post1"
+version = "0.0.5.post2"
 description = "Python bindings for ufbx (gonchar fork — SPHERIC rotation + Node cycle segfault fix)"
 license="MIT"
 homepage="https://ufbx.github.io/"

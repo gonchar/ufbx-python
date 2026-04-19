@@ -4,6 +4,7 @@ build/
 proj/
 __pycache__/
 dist/
+wheelhouse/
 *.egg-info/
 *.pyd
 *.pdb
